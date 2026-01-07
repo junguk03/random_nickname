@@ -189,6 +189,11 @@ class NicknameGenerator {
 
     // 기존 카테고리 방식 생성
     _generateCategoryNickname() {
+        // 글자수가 지정된 경우, 랜덤 한글 조합으로 생성
+        if (this._currentLength !== 'random') {
+            return this._generateRandomKoreanNickname();
+        }
+
         const categories = this._getAvailableCategories();
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
         const data = NICKNAME_DATA[randomCategory];
