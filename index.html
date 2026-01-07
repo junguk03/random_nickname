@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="게임, SNS용 랜덤 닉네임 생성기 - 클릭 한 번으로 멋진 닉네임 만들기">
+    <meta name="keywords" content="닉네임 생성기, 닉네임 추천, 게임 닉네임, 랜덤 닉네임">
+    <title>랜덤 닉네임 생성기 | 게임·SNS 닉네임 추천</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">랜덤 닉네임 생성기</h1>
+            <p class="subtitle">클릭 한 번으로 멋진 닉네임을 만들어보세요</p>
+        </header>
+
+        <main class="main">
+            <section class="category-section">
+                <h3 class="section-title">스타일 선택</h3>
+                <div class="category-buttons">
+                    <button class="category-btn active" data-category="random">랜덤 조합</button>
+                    <button class="category-btn" data-category="cute">귀여운</button>
+                    <button class="category-btn" data-category="cool">멋진</button>
+                    <button class="category-btn" data-category="funny">웃긴</button>
+                    <button class="category-btn" data-category="fantasy">판타지</button>
+                </div>
+            </section>
+
+            <section class="length-section">
+                <h3 class="section-title">글자수 선택</h3>
+                <div class="length-buttons">
+                    <button class="length-btn active" data-length="random">랜덤</button>
+                    <button class="length-btn" data-length="2">2글자</button>
+                    <button class="length-btn" data-length="3">3글자</button>
+                    <button class="length-btn" data-length="4">4글자</button>
+                    <button class="length-btn" data-length="5">5글자</button>
+                    <button class="length-btn" data-length="6">6글자</button>
+                    <button class="length-btn" data-length="7">7글자</button>
+                    <button class="length-btn" data-length="8">8글자</button>
+                </div>
+            </section>
+
+            <section class="nickname-display-section">
+                <div class="nickname-display">
+                    <div id="nickname" class="nickname">생성 버튼을 눌러주세요</div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="generateBtn" class="generate-btn">
+                        닉네임 생성
+                    </button>
+                    <button id="copyBtn" class="copy-btn" style="display: none;">
+                        복사
+                    </button>
+                </div>
+            </section>
+
+            <section class="history-section">
+                <h3 class="history-title">생성된 닉네임 목록</h3>
+                <div id="nicknameHistory" class="history-grid">
+                    <p class="empty-message">아직 생성된 닉네임이 없습니다</p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p class="footer-text">마음에 드는 닉네임이 나올 때까지 계속 생성해보세요!</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
