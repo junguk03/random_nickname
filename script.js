@@ -4,16 +4,14 @@ const ANIMATION_DURATION = 300;
 const MIN_NICKNAME_LENGTH = 2;
 const MAX_NICKNAME_LENGTH = 8;
 
-// 한글 자음과 모음
-const CONSONANTS = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-const VOWELS = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅗ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅡ', 'ㅣ'];
-const FINAL_CONSONANTS = ['', 'ㄱ', 'ㄴ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅇ'];
-
-// 발음하기 어려운 조합 필터링
-const AWKWARD_COMBINATIONS = [
-    'ㅃㅃ', 'ㅉㅉ', 'ㄸㄸ', 'ㄲㄲ',
-    'ㅆㅆ', 'ㅎㅎ', 'ㅋㅋ',
-];
+// 자주 쓰이는 한국어 음절 (카테고리별)
+const COMMON_SYLLABLES = {
+    cute: ['나', '미', '유', '리', '아', '민', '지', '은', '하', '서', '연', '수', '예', '다', '소', '별', '달', '구름', '꽃', '봄', '여름', '가을', '겨울', '노을', '바다', '하늘', '사랑', '희망', '빛', '요', '니', '루', '모', '보', '로', '코', '토', '포'],
+    cool: ['강', '혁', '준', '석', '진', '태', '현', '호', '철', '범', '건', '성', '용', '승', '찬', '우', '훈', '영', '무', '검', '칼', '불', '천', '왕', '제', '군', '장', '신', '성', '투', '크', '스', '엑', '제트', '블랙', '다크', '레드', '블루'],
+    funny: ['뿡', '빵', '똥', '방', '퐁', '팡', '퍽', '퉁', '쿵', '덩', '두', '부', '쿠', '푸', '루', '무', '뚱', '뿌', '삐', '뽀', '뚜', '또', '호호', '키키', '흐흐', '뭉', '몽', '봉', '롱', '콩', '땅콩', '호박', '감자', '고구마', '당근'],
+    fantasy: ['엘', '리', '아', '스', '라', '미', '카', '사', '나', '에', '르', '드', '다', '루', '시', '온', '안', '레', '디', '오', '제', '린', '로', '샤', '리엘', '미르', '세라', '루나', '노바', '스타', '오로라', '네오', '아리아', '레온', '카이', '제로', '루시'],
+    random: ['민', '서', '준', '하', '도', '윤', '우', '지', '현', '수', '은', '주', '아', '진', '영', '소', '예', '연', '희', '정', '경', '미', '선', '나', '다', '라', '유', '리', '시', '호', '원', '재', '성', '태', '건', '범', '석', '철', '용', '승', '찬', '훈', '강', '혁']
+};
 
 // Nickname data by category (기존 단어 조합용)
 const NICKNAME_DATA = {
@@ -106,25 +104,35 @@ class NicknameGenerator {
         return this._generateCategoryNickname();
     }
 
-    // 랜덤 한글 조합 생성
+    // 랜덤 한글 조합 생성 (음절 기반)
     _generateRandomKoreanNickname() {
-        const length = this._getDesiredLength();
+        const targetLength = this._getDesiredLength();
+        const syllables = COMMON_SYLLABLES.random;
         let nickname = '';
-        let attempts = 0;
-        const maxAttempts = 50;
+        let currentLength = 0;
 
-        while (attempts < maxAttempts) {
-            nickname = this._createKoreanWord(length);
+        while (currentLength < targetLength) {
+            const syllable = this._getRandomElement(syllables);
 
-            if (this._isValidNickname(nickname)) {
-                return nickname;
+            // 남은 길이 체크
+            if (currentLength + syllable.length <= targetLength) {
+                nickname += syllable;
+                currentLength += syllable.length;
+            } else if (currentLength + 1 === targetLength) {
+                // 1글자만 남았으면 1글자 음절 추가
+                const singleSyllables = syllables.filter(s => s.length === 1);
+                if (singleSyllables.length > 0) {
+                    nickname += this._getRandomElement(singleSyllables);
+                    currentLength += 1;
+                } else {
+                    break;
+                }
+            } else {
+                break;
             }
-
-            attempts++;
         }
 
-        // 실패하면 카테고리 방식으로 폴백
-        return this._generateCategoryNickname();
+        return nickname || this._generateCategoryNickname();
     }
 
     _getDesiredLength() {
@@ -134,80 +142,58 @@ class NicknameGenerator {
         return parseInt(this._currentLength);
     }
 
-    _createKoreanWord(length) {
-        let word = '';
-
-        for (let i = 0; i < length; i++) {
-            const consonant = this._getRandomElement(CONSONANTS);
-            const vowel = this._getRandomElement(VOWELS);
-
-            // 70% 확률로 받침 없이, 30% 확률로 받침 추가
-            const finalConsonant = Math.random() < 0.7
-                ? ''
-                : this._getRandomElement(FINAL_CONSONANTS);
-
-            const char = this._assembleHangul(consonant, vowel, finalConsonant);
-            word += char;
-        }
-
-        return word;
-    }
-
-    // 한글 조합 함수
-    _assembleHangul(consonant, vowel, finalConsonant = '') {
-        const HANGUL_START = 0xAC00;
-        const CONSONANT_BASE = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-        const VOWEL_BASE = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
-        const FINAL_BASE = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-
-        const consonantIndex = CONSONANT_BASE.indexOf(consonant);
-        const vowelIndex = VOWEL_BASE.indexOf(vowel);
-        const finalIndex = FINAL_BASE.indexOf(finalConsonant);
-
-        if (consonantIndex === -1 || vowelIndex === -1 || finalIndex === -1) {
-            return '';
-        }
-
-        const code = HANGUL_START + (consonantIndex * 21 * 28) + (vowelIndex * 28) + finalIndex;
-        return String.fromCharCode(code);
-    }
-
-    _isValidNickname(nickname) {
-        if (!nickname || nickname.length < MIN_NICKNAME_LENGTH) return false;
-        if (nickname.length > MAX_NICKNAME_LENGTH) return false;
-
-        // 이상한 조합 체크
-        for (const awkward of AWKWARD_COMBINATIONS) {
-            if (nickname.includes(awkward)) return false;
-        }
-
-        // 같은 글자가 3번 이상 반복되는지 체크
-        if (/(.)\1{2,}/.test(nickname)) return false;
-
-        return true;
-    }
-
     // 기존 카테고리 방식 생성
     _generateCategoryNickname() {
-        // 글자수가 지정된 경우, 랜덤 한글 조합으로 생성
-        if (this._currentLength !== 'random') {
-            return this._generateRandomKoreanNickname();
-        }
-
         const categories = this._getAvailableCategories();
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        const data = NICKNAME_DATA[randomCategory];
 
+        // 글자수가 지정된 경우: 카테고리 느낌으로 음절 조합 생성
+        if (this._currentLength !== 'random' && COMMON_SYLLABLES[randomCategory]) {
+            return this._generateCategoryBasedKorean(randomCategory);
+        }
+
+        // 랜덤 글자수인 경우: 기존 단어 조합 방식
+        const data = NICKNAME_DATA[randomCategory];
         const prefix = this._getRandomElement(data.prefixes);
         const suffix = this._getRandomElement(data.suffixes);
 
         const formats = [
             `${prefix}${suffix}`,
             `${suffix}${prefix}`,
-            `${prefix}_${suffix}`,
         ];
 
         return this._getRandomElement(formats);
+    }
+
+    // 카테고리 느낌에 맞는 한글 생성 (음절 기반)
+    _generateCategoryBasedKorean(category) {
+        const targetLength = this._getDesiredLength();
+        const syllables = COMMON_SYLLABLES[category] || COMMON_SYLLABLES.random;
+        let nickname = '';
+        let currentLength = 0;
+
+        while (currentLength < targetLength) {
+            const syllable = this._getRandomElement(syllables);
+
+            // 남은 길이 체크
+            if (currentLength + syllable.length <= targetLength) {
+                nickname += syllable;
+                currentLength += syllable.length;
+            } else if (currentLength + 1 === targetLength) {
+                // 1글자만 남았으면 1글자 음절 추가
+                const singleSyllables = syllables.filter(s => s.length === 1);
+                if (singleSyllables.length > 0) {
+                    nickname += this._getRandomElement(singleSyllables);
+                    currentLength += 1;
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        return nickname || this._generateCategoryNickname();
     }
 
     _getAvailableCategories() {
